@@ -5,10 +5,20 @@
 #include <time.h>
 #include <stdlib.h>
 #include <vector>
+#include <string>
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 800
 #define RAIN_LENGTH 20
+
+bool checkBorderTop(sf::Sprite entity)
+{
+    if (entity.getPosition().y < 0)
+    {
+        return false;
+    }
+    return true;
+}
 
 bool checkBorderLeft(sf::Sprite entity)
 {
@@ -35,6 +45,16 @@ bool checkBorderRight(sf::Sprite entity)
         return false;
     }
     return true;
+}
+
+bool checkEntityCollision(sf::Sprite entity1, sf::Sprite entity2)
+{
+    if (entity1.getGlobalBounds().intersects(entity2.getGlobalBounds()))
+    {
+        return true;
+    }
+
+    return false;
 }
 
 int randRainGen() //pick a random raindrop in the raindrop vector
@@ -74,6 +94,17 @@ bool turn() {
 
 int main()
 {
+    std::string text = "drops: ";
+    int drops = 0;
+    sf::Text drop_text;
+    sf::Font font;
+    if (!font.loadFromFile("C:/Users/tmdgj/Projects/umbGame/fonts/arial.ttf")) {
+        return EXIT_FAILURE;
+    }
+    drop_text.setFont(font);
+    drop_text.setCharacterSize(24);
+    drop_text.setFillColor(sf::Color::White);
+
     sf::RenderWindow window(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), "Umbrella");
     sf::Texture background;
     sf::Texture dog_texture;
@@ -99,12 +130,12 @@ int main()
     sf::Sprite dog;
     dog.setPosition(200, 600);
     dog.setTexture(dog_texture);
-    dog.setScale(0.5, 0.5);
+    dog.setScale(0.4, 0.4);
     float xv = 0.05f;
 
     sf::Sprite bird;
     bird.setTexture(bird_texture);
-    bird.setScale(0.6, 0.6);
+    bird.setScale(0.8, 0.8);
     bird.setPosition(400, 400);
 
     sf::Sprite rain;
@@ -116,6 +147,7 @@ int main()
     float timerMax = 1.0f;
     float yv = 0.15f;
     float b_xv = 0;
+    int hurt_timer = 0;
     
     std::vector<sf::Sprite> raindrops(20, sf::Sprite(drop_texture));
     for (int i = 0; i < RAIN_LENGTH; i++) {
@@ -140,6 +172,12 @@ int main()
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) && checkBorderRight(bird)) {
             bird.move(0.1, 0);
         }
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) && checkBorderBottom(bird)) {
+            bird.move(0, 0.1);
+        }
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) && checkBorderTop(bird)) {
+            bird.move(0, -0.1);
+        }
 
         if (bordercolli(dog)) {
             xv = -xv;
@@ -153,22 +191,28 @@ int main()
             }
             timer = 0.0f;
         }
-
         dog.move(xv, 0);
 
         int num = randRainGen();
-
         for (int j = 0; j < num; j++)
         {
-            if (checkBorderBottom(raindrops[j]) && (raindrops[j].getPosition().y != bird.getPosition().y))
+            if (checkEntityCollision(raindrops[j], dog)) {
+                dog.setColor(sf::Color(255, 0, 0));
+                raindrops[j].setPosition(rand() % SCREEN_WIDTH, -10);
+                drops++;
+                hurt_timer = 0;
+                
+            }
+            else if (checkBorderBottom(raindrops[j]) && !checkEntityCollision(raindrops[j], bird))
             {
                 raindrops[j].move(0, yv);
+                continue;
             }
             else {
-                int xpos = raindrops[j].getPosition().x;
-                raindrops[j].setPosition(xpos, -10);
+                raindrops[j].setPosition(rand() % SCREEN_WIDTH, -10);
             }
         }
+        drop_text.setString(text + std::to_string(drops));
 
         window.clear();
         window.draw(back);
@@ -178,7 +222,12 @@ int main()
         {
             window.draw(raindrops[j]);
         }
+        window.draw(drop_text);
         window.display();
+        if (hurt_timer > 500) {
+            dog.setColor(sf::Color::White);
+        }
+        hurt_timer++;
     }
 
     return 0;
