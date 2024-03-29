@@ -52,6 +52,15 @@ bool checkBorderBottom(sf::Sprite entity)
     return true;
 }
 
+bool checkBorderTop(sf::Sprite entity)
+{
+    if(entity.getPosition().y<0)
+    {
+        return false;
+    }
+    return true;
+}
+
 
 bool checkEntityCollision(sf::Sprite entity1, sf::Sprite entity2)
 {
@@ -139,6 +148,7 @@ int main()
     float b_xv = 0;
     int hurt_timer=0; //used to measure how long to flash the dog red... indicating collision with raindrop
     float b_changex=0;
+    float b_changey=0;
     
     while(window.isOpen())
     {
@@ -155,6 +165,7 @@ int main()
                     break;
                 case sf::Event::KeyPressed: //read key input
                     b_changex=0; //reset direction
+                    b_changey=0;
                     //read input of A or Left
                     if((event.key.code==sf::Keyboard::A ||event.key.code==sf::Keyboard::Left) &&checkBorderLeft(bird))
                     {
@@ -165,11 +176,19 @@ int main()
                     {
                         b_changex=30;
                     }
+                    if((event.key.code==sf::Keyboard::W||event.key.code==sf::Keyboard::Up)&&checkBorderTop(bird))
+                    {
+                        b_changey=-30;
+                    }
+                    if((event.key.code==sf::Keyboard::S||event.key.code==sf::Keyboard::Down) &&(bird.getPosition().y<=((dog.getPosition().y-dog.getGlobalBounds().height))))
+                    {
+                        b_changey=30;
+                    }
                     
                     
                     
                     
-                    bird.move(b_changex,0);
+                    bird.move(b_changex,b_changey);
                     
             }
              
@@ -191,7 +210,7 @@ int main()
         dog.move(xv, 0);
         
         int num = randRainGen();
-        for(int j = 0; j<num; j++)
+        for(int j = 0; j<=num; j++)
         {
             if(checkEntityCollision(raindrops[j],dog))
             {
